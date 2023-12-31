@@ -86,6 +86,10 @@ public class Player : MonoBehaviour
 
         myAnimator.SetBool("isMoving", isMoving);
 
+        myAnimator.SetBool("isGrounded", isGrounded);
+
+        myAnimator.SetFloat("yVelocity", rb.velocity.y);
+
     }
 
 
