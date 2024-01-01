@@ -20,6 +20,12 @@ public class Player : MonoBehaviour
     float dashCoolDownTimer;
     bool isDashing;
 
+    [Header("Attack Info")]
+    [SerializeField] float comboTime = 0.4f;
+    bool isAttacking;
+    int comboCounter;
+    float comboTimeWindow;
+
     private bool isGrounded;
 
     Animator myAnimator;
@@ -48,6 +54,9 @@ public class Player : MonoBehaviour
         dashTime -= Time.deltaTime;
         dashCoolDownTimer -= Time.deltaTime;
 
+        comboTimeWindow -= Time.deltaTime;
+
+
 
         FlipController();
 
@@ -72,11 +81,25 @@ public class Player : MonoBehaviour
         {
             DashAbility();
         }
+        if (Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            StartAttackEvent();
+        }
+    }
+
+    private void StartAttackEvent()
+    {
+        if (comboTimeWindow < 0)
+        {
+            comboCounter = 0;
+        }
+        isAttacking = true;
+        comboTimeWindow = comboTime;
     }
 
     private void DashAbility()
     {
-        if (xInput != 0 && dashCoolDownTimer < 0)
+        if (xInput != 0 && dashCoolDownTimer < 0 && !isAttacking)
         {
             dashCoolDownTimer = dashCoolDown;
             dashTime = dashDuration;
@@ -84,10 +107,26 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void AttackIsOver()
+    {
+        isAttacking = false;
+
+        comboCounter++;
+        if (comboCounter > 2)
+        {
+            comboCounter = 0;
+        }
+    }
+
     void Movement() //handles all things relating to movement
     {
-
-        if (dashTime > 0 && xInput != 0)
+        
+        if(isAttacking)
+        {
+            rb.velocity = new Vector2(0, 0);
+        }
+        
+        else if (dashTime > 0 && xInput != 0)
             rb.velocity = new Vector2(xInput * dashSpeed, 0);
         else
         {
@@ -125,6 +164,9 @@ public class Player : MonoBehaviour
         myAnimator.SetFloat("yVelocity", rb.velocity.y);
 
         myAnimator.SetBool("isDashing", isDashing); //isDashing is derrived from the DashAbility() and Movement() methods
+
+        myAnimator.SetBool("isAttacking", isAttacking);
+        myAnimator.SetInteger("comboCounter", comboCounter);
 
     }
 
