@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -20,10 +16,12 @@ public class Player : MonoBehaviour
     [SerializeField] float dashDuration;
     [SerializeField] float dashTime;
     [SerializeField] float dashSpeed;
+    [SerializeField] float dashCoolDown;
+    float dashCoolDownTimer;
     bool isDashing;
 
     private bool isGrounded;
-    
+
     Animator myAnimator;
 
     private float xInput;
@@ -48,12 +46,8 @@ public class Player : MonoBehaviour
         CollisionChecks();
 
         dashTime -= Time.deltaTime;
+        dashCoolDownTimer -= Time.deltaTime;
 
-        if (Input.GetKeyDown(KeyCode.LeftShift) && xInput != 0)
-        {
-            dashTime = dashDuration;
-            isDashing = true;
-        }
 
         FlipController();
 
@@ -66,18 +60,31 @@ public class Player : MonoBehaviour
             groundCheckDistance, whatIsGround);
     }
 
-    void CheckInputs()
+    void CheckInputs() //whenever we want to see if the player is pushing a button, we should check that in THIS method, and then execute the effect of that button.
     {
-        xInput = Input.GetAxisRaw("Horizontal");
+        xInput = Input.GetAxisRaw("Horizontal"); //checks the button by assigning it to a variable (GetAxisRAW gives us only -1, 0, and 1, increases the snappiness/gamefeel)
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space)) //checks the button
         {
-            Jump();
+            Jump();  //executes the effect
         }
-
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            DashAbility();
+        }
     }
-    
-    void Movement()
+
+    private void DashAbility()
+    {
+        if (xInput != 0 && dashCoolDownTimer < 0)
+        {
+            dashCoolDownTimer = dashCoolDown;
+            dashTime = dashDuration;
+            isDashing = true;
+        }
+    }
+
+    void Movement() //handles all things relating to movement
     {
 
         if (dashTime > 0 && xInput != 0)
@@ -88,26 +95,36 @@ public class Player : MonoBehaviour
             isDashing = false;
         }
         //rb.velocity.y means "just go with whatever
-        //the rigid body says for the y axis!")
+        //the rigid body says for the y axis!... essentially,
+        //prevents you from messing with the rb's current business)
     }
 
     private void Jump()
     {
-        if (isGrounded)
-        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        if (isGrounded) //isGrounded is checked via the "CollisionsChecks" method above,
+                        //using Raycasts! The Raycast laser beam we made is visually
+                        //represented by the OnDrawGizmos() method below
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
     }
 
-    private void AnimationControllers()
+    private void AnimationControllers() //Whenever you want to use myAnimator,
+                                        //do so HERE in this method, and assign parameters
+                                        //to VARIABLES that are controlled elsewhere in
+                                        //this script by other methods
     {
         bool isMoving = rb.velocity.x != 0;
 
-        myAnimator.SetBool("isMoving", isMoving);
+        myAnimator.SetBool("isMoving", isMoving); //isMoving is controlled here locally
+                                                  //because it isn't used anywhere else!
+                                                  //It's better to try to keep variables
+                                                  //private at EVERY level, even if that 
+                                                  //means private at the method level
 
-        myAnimator.SetBool("isGrounded", isGrounded);
+        myAnimator.SetBool("isGrounded", isGrounded); //isGrounded is derrived from "CollisionsChecks()"
 
         myAnimator.SetFloat("yVelocity", rb.velocity.y);
 
-        myAnimator.SetBool("isDashing", isDashing);
+        myAnimator.SetBool("isDashing", isDashing); //isDashing is derrived from the DashAbility() and Movement() methods
 
     }
 
@@ -131,7 +148,7 @@ public class Player : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x, 
+        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x,
             transform.position.y - groundCheckDistance));
     }
 }
