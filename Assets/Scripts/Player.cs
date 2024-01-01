@@ -9,16 +9,18 @@ public class Player : MonoBehaviour
 
     [Header("Movement Physics")]
     [SerializeField] float jumpForce = 4f;
-
     [SerializeField] float moveSpeed = 3f;
-
     [SerializeField] Rigidbody2D rb;
 
     [Header("Collision Info")]
-
     [SerializeField] float groundCheckDistance;
-
     [SerializeField] private LayerMask whatIsGround;
+
+    [Header("Dash Info")]
+    [SerializeField] float dashDuration;
+    [SerializeField] float dashTime;
+    [SerializeField] float dashSpeed;
+    bool isDashing;
 
     private bool isGrounded;
     
@@ -45,6 +47,14 @@ public class Player : MonoBehaviour
 
         CollisionChecks();
 
+        dashTime -= Time.deltaTime;
+
+        if (Input.GetKeyDown(KeyCode.LeftShift) && xInput != 0)
+        {
+            dashTime = dashDuration;
+            isDashing = true;
+        }
+
         FlipController();
 
         AnimationControllers();
@@ -68,8 +78,15 @@ public class Player : MonoBehaviour
     }
     
     void Movement()
-    {  
-        rb.velocity = new Vector2(xInput * moveSpeed, rb.velocity.y);
+    {
+
+        if (dashTime > 0 && xInput != 0)
+            rb.velocity = new Vector2(xInput * dashSpeed, 0);
+        else
+        {
+            rb.velocity = new Vector2(xInput * moveSpeed, rb.velocity.y);
+            isDashing = false;
+        }
         //rb.velocity.y means "just go with whatever
         //the rigid body says for the y axis!")
     }
@@ -89,6 +106,8 @@ public class Player : MonoBehaviour
         myAnimator.SetBool("isGrounded", isGrounded);
 
         myAnimator.SetFloat("yVelocity", rb.velocity.y);
+
+        myAnimator.SetBool("isDashing", isDashing);
 
     }
 
