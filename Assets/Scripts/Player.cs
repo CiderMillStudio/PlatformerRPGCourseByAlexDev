@@ -1,16 +1,13 @@
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class Player : Entity
 {
 
-    [Header("Movement Physics")]
+    [Header("Movement Info")]
     [SerializeField] float jumpForce = 4f;
     [SerializeField] float moveSpeed = 3f;
-    [SerializeField] Rigidbody2D rb;
 
-    [Header("Collision Info")]
-    [SerializeField] float groundCheckDistance;
-    [SerializeField] private LayerMask whatIsGround;
+
 
     [Header("Dash Info")]
     [SerializeField] float dashDuration;
@@ -26,48 +23,40 @@ public class Player : MonoBehaviour
     int comboCounter;
     float comboTimeWindow;
 
-    private bool isGrounded;
 
-    Animator myAnimator;
+
 
     private float xInput;
 
-    private int facingDir = 1;
-    private bool facingRight = true;
 
 
 
-    void Start()
+    protected override void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        myAnimator = GetComponentInChildren<Animator>();
+        base.Start();
     }
 
-    void Update()
+    protected override void Update()
     {
+        base.Update(); 
         Movement();
 
         CheckInputs();
 
-        CollisionChecks();
-
-        dashTime -= Time.deltaTime;
-        dashCoolDownTimer -= Time.deltaTime;
-
-        comboTimeWindow -= Time.deltaTime;
-
-
-
-        FlipController();
+        DecreaseTimers();
 
         AnimationControllers();
     }
 
-    private void CollisionChecks()
+    private void DecreaseTimers()
     {
-        isGrounded = Physics2D.Raycast(transform.position, Vector2.down,
-            groundCheckDistance, whatIsGround);
+        dashTime -= Time.deltaTime;
+        dashCoolDownTimer -= Time.deltaTime;
+
+        comboTimeWindow -= Time.deltaTime;
     }
+
+
 
     void CheckInputs() //whenever we want to see if the player is pushing a button, we should check that in THIS method, and then execute the effect of that button.
     {
@@ -84,11 +73,13 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
             StartAttackEvent();
+            
         }
     }
 
     private void StartAttackEvent()
     {
+        if (!isGrounded || isDashing) { return; }
         if (comboTimeWindow < 0)
         {
             comboCounter = 0;
@@ -99,7 +90,7 @@ public class Player : MonoBehaviour
 
     private void DashAbility()
     {
-        if (xInput != 0 && dashCoolDownTimer < 0 && !isAttacking)
+        if (dashCoolDownTimer < 0 && !isAttacking)
         {
             dashCoolDownTimer = dashCoolDown;
             dashTime = dashDuration;
@@ -118,16 +109,18 @@ public class Player : MonoBehaviour
         }
     }
 
+
+
     void Movement() //handles all things relating to movement
     {
         
         if(isAttacking)
         {
-            rb.velocity = new Vector2(0, 0);
+                rb.velocity = new Vector2(0, 0);
         }
         
-        else if (dashTime > 0 && xInput != 0)
-            rb.velocity = new Vector2(xInput * dashSpeed, 0);
+        else if (dashTime > 0)
+            rb.velocity = new Vector2(facingDir * dashSpeed, 0);
         else
         {
             rb.velocity = new Vector2(xInput * moveSpeed, rb.velocity.y);
@@ -166,31 +159,11 @@ public class Player : MonoBehaviour
         myAnimator.SetBool("isDashing", isDashing); //isDashing is derrived from the DashAbility() and Movement() methods
 
         myAnimator.SetBool("isAttacking", isAttacking);
+
         myAnimator.SetInteger("comboCounter", comboCounter);
 
     }
 
 
-    void FlipPlayerTransform()
-    {
-        facingDir = -facingDir;
-        facingRight = !facingRight;
-        transform.Rotate(0, 180, 0);
-    }
 
-
-    void FlipController()
-    {
-        if (rb.velocity.x > 0 && !facingRight)
-            FlipPlayerTransform();
-
-        else if (rb.velocity.x < 0 && facingRight)
-            FlipPlayerTransform();
-    }
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.DrawLine(transform.position, new Vector3(transform.position.x,
-            transform.position.y - groundCheckDistance));
-    }
 }
