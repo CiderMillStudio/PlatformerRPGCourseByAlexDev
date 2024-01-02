@@ -45,6 +45,8 @@ public class Player : Entity
 
         DecreaseTimers();
 
+        FlipController();
+
         AnimationControllers();
     }
 
@@ -162,6 +164,16 @@ public class Player : Entity
 
         myAnimator.SetInteger("comboCounter", comboCounter);
 
+    }
+
+
+    void FlipController()
+    {
+        if (rb.velocity.x > 0 && !facingRight)
+            FlipTransform();
+
+        else if (rb.velocity.x < 0 && facingRight)
+            FlipTransform();
     }
 
 
